@@ -434,21 +434,37 @@
           }
         });
 
-        goPrivateButton.addEventListener("click", async event => {
-          roomNameInput.disabled = true;
-          goPublicButton.disabled = true;
-          event.currentTarget.disabled = true;
+goPrivateButton.addEventListener("click", async event => {
+  // Disable UI while generating a private room
+  roomNameInput.disabled = true;
+  goPublicButton.disabled = true;
+  goPrivateButton.disabled = true;
 
-          let response = await fetch("https://" + hostname + "/api/room", { method: "POST" });
-          if (!response.ok) {
-            alert("Something went wrong creating a private room.");
-            document.location.reload();
-            return;
-          }
+  let response;
+  try {
+    response = await fetch("https://" + hostname + "/api/room", { method: "POST" });
+  } catch (err) {
+    // If the backend isn't responding, still show chat interface
+    roomForm.style.display = "none";
+    roomname = crypto.randomUUID().replace(/-/g, ""); // fallback private ID
+    startChat();
+    return;
+  }
 
-          roomname = await response.text();
-          startChat();
-        });
+  if (!response.ok) {
+    alert("Failed to create private room.");
+    roomForm.style.display = "none";
+    roomname = crypto.randomUUID().replace(/-/g, "");
+    startChat();
+    return;
+  }
+
+  roomname = await response.text();
+
+  // Hide the form and proceed
+  roomForm.style.display = "none";
+  startChat();
+});
 
         roomNameInput.focus();
       }
